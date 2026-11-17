@@ -1,0 +1,11 @@
+{
+  "schema": "nacsl-interface-1",
+  "function": "contradictory_rate",
+  "parameters": [
+    "state"
+  ],
+  "return_type": "int",
+  "data_model": "LP64",
+  "frame": "nothing",
+  "parameter_aliases": {"输入状态": "state"}
+}

@@ -1,0 +1,42 @@
+{
+  "clamp": {
+    "valid_inputs": [
+      {
+        "id": "ordered-bounds",
+        "inputs": {"x": 5, "low": 0, "high": 10},
+        "requirement": "REQ-001",
+        "reason": "Strictly ordered bounds satisfy low <= high."
+      },
+      {
+        "id": "equal-bounds",
+        "inputs": {"x": 11, "low": 10, "high": 10},
+        "requirement": "REQ-001",
+        "reason": "The inclusive input condition low <= high also permits equal bounds."
+      }
+    ],
+    "invalid_inputs": [
+      {
+        "id": "reversed-bounds",
+        "inputs": {"x": 5, "low": 10, "high": 0},
+        "requirement": "REQ-001",
+        "reason": "REQ-001 defines the behavior under low <= high."
+      }
+    ],
+    "invalid_outputs": [
+      {
+        "id": "below-lower-bound",
+        "inputs": {"x": -1, "low": 0, "high": 10},
+        "result": -1,
+        "requirement": "REQ-001",
+        "reason": "The returned value is below the inclusive lower bound."
+      },
+      {
+        "id": "above-upper-bound",
+        "inputs": {"x": 11, "low": 0, "high": 10},
+        "result": 11,
+        "requirement": "REQ-001",
+        "reason": "The returned value exceeds the inclusive upper bound."
+      }
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "fan_command": {
+    "function_spec": {
+      "function": {"name":"fan_command","signature":"signed char fan_command(signed char requested, signed char limit, unsigned char mode)"},
+      "expected_behavior":"Select off, normal or boost behavior under the configured limit.",
+      "pre_condition":{"natural_language":"The limit is in [0,100] and mode is 0, 1 or 2.","formal_candidate":"limit >= 0 && limit <= 100 && mode <= 2"},
+      "post_conditions":[
+        {"clause_id":"Q1","natural_language":"Off returns zero.","formal_candidate":"result == 0","guard":"mode == 0","requirement_refs":["REQ-003"],"evidence_refs":[]},
+        {"clause_id":"Q2","natural_language":"Boost returns the configured limit.","formal_candidate":"result == limit","guard":"mode == 2","requirement_refs":["REQ-003","REQ-004"],"evidence_refs":[]},
+        {"clause_id":"Q3","natural_language":"A nonpositive request in normal mode returns zero.","formal_candidate":"result == 0","guard":"mode == 1 && requested <= 0","requirement_refs":["REQ-003","REQ-002"],"evidence_refs":[]},
+        {"clause_id":"Q4","natural_language":"Normal mode raises small positive requests to 20, subject to the limit.","formal_candidate":"(limit < 20 && result == limit) || (limit >= 20 && result == 20)","guard":"mode == 1 && requested > 0 && requested < 20","requirement_refs":["REQ-003","REQ-002"],"evidence_refs":[]},
+        {"clause_id":"Q5","natural_language":"Normal mode preserves a request of at least 20 within the limit.","formal_candidate":"result == requested","guard":"mode == 1 && requested >= 20 && requested <= limit","requirement_refs":["REQ-003","REQ-002"],"evidence_refs":[]},
+        {"clause_id":"Q6","natural_language":"Normal mode caps a request of at least 20 above the limit.","formal_candidate":"result == limit","guard":"mode == 1 && requested >= 20 && requested > limit","requirement_refs":["REQ-003","REQ-002"],"evidence_refs":[]}
+      ],
+      "requirement_refs":["REQ-002","REQ-003","REQ-004"],
+      "conflicts":[],
+      "ambiguities":[]
+    },
+    "callee_expectations":[
+      {"callee":"target_speed","callsite_id":"CALL-47279d1d3fa0","expected_pre_nl":"The caller permits every signed request and passes its original limit in [0,100].","expected_post_nl":"Apply the normal speed rule to the original request.","requirement_refs":["REQ-002","REQ-004"],"evidence":["The mode 1 call passes requested and limit."]},
+      {"callee":"target_speed","callsite_id":"CALL-b5ae8e1a0ca3","expected_pre_nl":"Both actual arguments are the limit in [0,100].","expected_post_nl":"For this callsite, return the limit including when it is zero or below 20.","requirement_refs":["REQ-003","REQ-004"],"evidence":["The mode 2 call passes limit in both argument positions."]}
+    ]
+  },
+  "target_speed": {
+    "function_spec": {
+      "function":{"name":"target_speed","signature":"signed char target_speed(signed char requested, signed char limit)"},
+      "expected_behavior":"Apply the normal speed rule and then cap the target.",
+      "pre_condition":{"natural_language":"The limit is in [0,100].","formal_candidate":"limit >= 0 && limit <= 100"},
+      "post_conditions":[
+        {"clause_id":"Q1","natural_language":"A nonpositive request returns zero.","formal_candidate":"result == 0","guard":"requested <= 0","requirement_refs":["REQ-002"],"evidence_refs":["EXP-CALL-47279d1d3fa0","EXP-CALL-b5ae8e1a0ca3"]},
+        {"clause_id":"Q2","natural_language":"Raise small positive requests to 20, bounded by the limit.","formal_candidate":"(limit < 20 && result == limit) || (limit >= 20 && result == 20)","guard":"requested > 0 && requested < 20","requirement_refs":["REQ-002"],"evidence_refs":["EXP-CALL-47279d1d3fa0","EXP-CALL-b5ae8e1a0ca3"]},
+        {"clause_id":"Q3","natural_language":"Preserve requests of at least 20, bounded by the limit.","formal_candidate":"(requested <= limit && result == requested) || (requested > limit && result == limit)","guard":"requested >= 20","requirement_refs":["REQ-002"],"evidence_refs":["EXP-CALL-47279d1d3fa0","EXP-CALL-b5ae8e1a0ca3"]}
+      ],
+      "requirement_refs":["REQ-002","REQ-004"],
+      "conflicts":[],
+      "ambiguities":[]
+    },
+    "callee_expectations":[
+      {"callee":"limit_speed","callsite_id":"CALL-9ba68c786f2a","expected_pre_nl":"The nominal request is 20 and the limit is in [0,100].","expected_post_nl":"Return 20 if the limit permits it, otherwise return the limit.","requirement_refs":["REQ-002","REQ-004"],"evidence":["The small-positive branch passes the constant 20."]},
+      {"callee":"limit_speed","callsite_id":"CALL-22c4f89019b3","expected_pre_nl":"The nominal request is at least 20 and the limit is in [0,100].","expected_post_nl":"Preserve the request when within the limit and cap it otherwise.","requirement_refs":["REQ-002","REQ-004"],"evidence":["The final branch passes the original request."]}
+    ]
+  },
+  "limit_speed": {
+    "function_spec": {
+      "function":{"name":"limit_speed","signature":"signed char limit_speed(signed char requested, signed char limit)"},
+      "expected_behavior":"Clamp the request to the inclusive interval from zero to the limit.",
+      "pre_condition":{"natural_language":"The limit is in [0,100].","formal_candidate":"limit >= 0 && limit <= 100"},
+      "post_conditions":[
+        {"clause_id":"Q1","natural_language":"A negative request returns zero.","formal_candidate":"result == 0","guard":"requested < 0","requirement_refs":["REQ-001"],"evidence_refs":[]},
+        {"clause_id":"Q2","natural_language":"A request above the limit returns the limit.","formal_candidate":"result == limit","guard":"requested > limit","requirement_refs":["REQ-001"],"evidence_refs":["EXP-CALL-9ba68c786f2a","EXP-CALL-22c4f89019b3"]},
+        {"clause_id":"Q3","natural_language":"An in-range request is preserved.","formal_candidate":"result == requested","guard":"requested >= 0 && requested <= limit","requirement_refs":["REQ-001"],"evidence_refs":["EXP-CALL-9ba68c786f2a","EXP-CALL-22c4f89019b3"]}
+      ],
+      "requirement_refs":["REQ-001","REQ-004"],
+      "conflicts":[],
+      "ambiguities":[]
+    },
+    "callee_expectations":[]
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "run_id",
+    "mode",
+    "status",
+    "contracts",
+    "static_properties",
+    "failures",
+    "evaluation"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "mode": {
+      "enum": [
+        "REAL",
+        "FIXTURE_LLM_REAL_TOOLS",
+        "MOCK_ALL"
+      ]
+    },
+    "status": {
+      "enum": [
+        "COMPLETED",
+        "COMPLETED_WITH_ERRORS",
+        "FAILED",
+        "CANCELLED"
+      ]
+    },
+    "contracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "spec_id",
+          "precondition",
+          "properties",
+          "verification",
+          "evaluation"
+        ]
+      }
+    },
+    "static_properties": {
+      "type": "array"
+    },
+    "failures": {
+      "type": "array"
+    },
+    "evaluation": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "NOT_RUN"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "logging": {
+      "type": "object",
+      "required": [
+        "status",
+        "schema_version",
+        "events",
+        "human_readable",
+        "attempted_events",
+        "dropped_events",
+        "errors"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "COMPLETE",
+            "DEGRADED"
+          ]
+        },
+        "schema_version": {
+          "type": "integer"
+        },
+        "events": {
+          "type": "string"
+        },
+        "human_readable": {
+          "type": "string"
+        },
+        "attempted_events": {
+          "type": "integer"
+        },
+        "dropped_events": {
+          "type": "integer"
+        },
+        "errors": {
+          "type": "array"
+        }
+      }
+    }
+  }
+}

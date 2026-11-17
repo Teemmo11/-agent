@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SpecAgent · 运行监控</title><link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+<header class="app-header">
+  <a class="brand" href="/" aria-label="SpecAgent 运行监控"><span class="brand-mark" aria-hidden="true">S</span><span>SpecAgent <small>第一阶段监控</small></span></a>
+  <div class="header-tools"><span id="connection" class="connection">正在连接</span><button id="pause" type="button">暂停刷新</button></div>
+</header>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="section-kicker">运行记录</div>
+    <label for="run-select">选择一次运行</label><select id="run-select"><option value="">正在发现运行…</option></select>
+    <div id="run-list" class="run-list"></div>
+    <nav class="section-nav" aria-label="页面导航">
+      <a href="#workflow">执行流程</a>
+      <a href="#loop-title">验证循环</a>
+      <a href="#pq-heading" id="pq-nav" hidden>前置与后置条件</a>
+      <a href="#task-heading">逐属性结果</a>
+      <a href="#evidence">执行证据</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="page-heading"><div><div class="section-kicker">规格生成与形式验证</div><h1 id="run-title">等待运行记录</h1><p id="run-subtitle">启动 SpecAgent 后，这里会显示当前运行。</p></div><div id="run-badges" class="badges"></div></div>
+    <div id="notice" class="notice" role="status" hidden></div>
+    <section class="panel workflow-panel" id="workflow" aria-labelledby="workflow-title">
+      <div class="workflow-heading">
+        <h2 id="workflow-title">执行流程</h2>
+        <span id="flow-count" class="flow-count">等待运行</span>
+      </div>
+      <ol id="pipeline" class="pipeline" aria-label="第一阶段流程"></ol>
+      <div class="overview" aria-label="运行概览">
+        <div class="metric current-metric"><span class="metric-label">当前环节</span><strong id="current-step">等待输入</strong><span id="current-detail" class="muted">尚未选择运行</span></div>
+        <div class="metric"><span class="metric-label">已结束 / 已发现任务</span><strong id="task-count" class="mono">—</strong><span id="verdict-count" class="muted"></span></div>
+        <div class="metric"><span class="metric-label">运行用时</span><strong id="elapsed" class="mono">00:00</strong><span id="last-activity" class="muted">等待事件</span></div>
+      </div>
+    </section>
+    <section class="panel loop-panel" aria-labelledby="loop-title">
+      <div class="loop-heading">
+        <div>
+          <div class="section-kicker">模型验证</div>
+          <h2 id="loop-title">逐属性验证循环</h2>
+          <p>每份契约先检查 P，再逐条检查 Q。</p>
+        </div>
+        <div class="loop-count" id="loop-count">等待任务</div>
+      </div>
+      <div class="loop-body">
+        <div id="loop-current" class="loop-current">规格准备好后进入验证循环</div>
+        <ol id="loop-steps" class="loop-steps" aria-label="每一轮的步骤">
+          <li><span class="loop-step-number">1</span><span><strong>取一条属性</strong><small>准备独立验证任务</small></span></li>
+          <li><span class="loop-step-number">2</span><span><strong>生成模型</strong><small>C2Btor</small></span></li>
+          <li><span class="loop-step-number">3</span><span><strong>校验模型</strong><small>catbtor · 定位目标</small></span></li>
+          <li><span class="loop-step-number">4</span><span><strong>检查反例</strong><small>rIC3</small></span></li>
+          <li><span class="loop-step-number">5</span><span><strong>记录结论</strong><small>检查证据并保存</small></span></li>
+        </ol>
+        <div class="loop-return" aria-label="还有属性时回到第一步">
+          <span><span aria-hidden="true">↶</span> 还有属性？回到第 1 步，取下一条</span>
+        </div>
+        <div class="loop-exit"><span aria-hidden="true">↳</span> 属性处理完毕 → 汇总结果</div>
+        <ol id="loop-rounds" class="loop-rounds" aria-label="已记录的验证轮次" hidden></ol>
+      </div>
+    </section>
+    <section class="panel pq-panel" aria-labelledby="pq-heading" hidden>
+      <div class="panel-heading">
+        <div><h2 id="pq-heading">前置与后置条件</h2><p id="pq-source" class="muted"></p></div>
+        <select id="pq-select" aria-label="选择要查看的函数契约" hidden></select>
+      </div>
+      <div id="pq-conditions"></div>
+    </section>
+    <section class="branches" aria-label="规格生成分支">
+      <div class="panel branch-panel"><div class="panel-heading"><div><span class="branch-symbol">H</span><h2>Hoare 行为规格</h2></div><span id="hoare-status" class="badge">等待</span></div><p id="hoare-detail" class="muted">由需求、函数与调用上下文生成 P / Q。</p><div id="functions" class="function-list"></div><div id="contracts" class="contract-list"></div></div>
+      <div class="panel branch-panel"><div class="panel-heading"><div><span class="branch-symbol static-symbol">S</span><h2>静态安全属性</h2></div><span id="static-status" class="badge">等待</span></div><p id="static-detail" class="muted">数组边界、指针、除零与有符号溢出检查。</p><div id="safety-properties" class="contract-list"></div></div>
+    </section>
+    <section class="panel"><div class="panel-heading task-heading"><div><h2 id="task-heading">逐属性结果</h2></div><div class="task-filters"><label class="sr-only" for="branch-filter">属性分支</label><select id="branch-filter"><option value="all">全部分支</option><option value="hoare">Hoare</option><option value="static">静态检查</option></select><label class="sr-only" for="task-search">筛选任务</label><input id="task-search" type="search" placeholder="筛选函数或属性 ID"></div></div>
+      <div class="task-table" role="table" aria-label="逐属性验证任务"><div class="task-row table-head" role="row"><span role="columnheader">任务 / 函数</span><span role="columnheader">当前步骤</span><span role="columnheader">原始结果</span><span role="columnheader">分类 / 结论</span><span></span></div><div id="tasks" role="rowgroup"></div></div>
+    </section>
+    <div id="evidence" class="lower-grid">
+      <section class="panel"><div class="panel-heading"><h2>工具执行</h2><span id="tool-count" class="muted">0 个进行中</span></div><div id="tools" class="tool-list"></div></section>
+      <section class="panel"><div class="panel-heading"><h2>事件时间线</h2><span class="muted">最新事件优先 · 点击查看详情</span></div><ol id="events" class="event-list"></ol></section>
+    </div>
+    <footer>本界面展示运行记录，未执行独立证据审计。第一阶段 evaluation 保持 NOT_RUN；验证通过不代表规约质量已评估。</footer>
+  </main>
+</div>
+<dialog id="detail-dialog"><div class="dialog-heading"><h2 id="detail-title">详情</h2><button id="close-detail" type="button" aria-label="关闭详情">关闭</button></div><div id="detail-body"></div></dialog>
+<div id="announcer" class="sr-only" aria-live="polite"></div>
+</body></html>

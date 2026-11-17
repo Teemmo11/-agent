@@ -1,0 +1,441 @@
+{
+  "t1": [
+    {
+      "schema": "nacsl-t1-1",
+      "items": [
+        {
+          "kind": "REQUIREMENT",
+          "anchors": [
+            {
+              "line": 1,
+              "quote": "等级、区域、锁定码均为 0 到 9 的整数。"
+            }
+          ],
+          "interpretation": "等级、区域、锁定码均为 0 到 9 的整数。"
+        },
+        {
+          "kind": "REQUIREMENT",
+          "anchors": [
+            {
+              "line": 2,
+              "quote": "按顺序选择第一条匹配规则：锁定码至少为 7 时返回 0。"
+            }
+          ],
+          "interpretation": "按顺序选择第一条匹配规则：锁定码至少为 7 时返回 0。"
+        },
+        {
+          "kind": "REQUIREMENT",
+          "anchors": [
+            {
+              "line": 3,
+              "quote": "否则，等级至少为 8 时返回 3"
+            }
+          ],
+          "interpretation": "没有锁定例外时，高等级返回 3。"
+        },
+        {
+          "kind": "REQUIREMENT",
+          "anchors": [
+            {
+              "line": 3,
+              "quote": "否则，等级至少为 4 且区域不超过 5 时返回 2"
+            }
+          ],
+          "interpretation": "前两条均未匹配时，受限区域和等级返回 2。"
+        },
+        {
+          "kind": "REQUIREMENT",
+          "anchors": [
+            {
+              "line": 4,
+              "quote": "其余合法输入返回 1。"
+            }
+          ],
+          "interpretation": "其余合法输入返回 1。"
+        }
+      ],
+      "issues": []
+    }
+  ],
+  "t2": [
+    {
+      "schema": "nacsl-t2-1",
+      "status": "OK",
+      "S": [
+        {
+          "id": "S0",
+          "role": "requires",
+          "expr": [
+            "and",
+            [
+              "ge",
+              "level",
+              0
+            ],
+            [
+              "le",
+              "level",
+              9
+            ],
+            [
+              "ge",
+              "zone",
+              0
+            ],
+            [
+              "le",
+              "zone",
+              9
+            ],
+            [
+              "ge",
+              "lock",
+              0
+            ],
+            [
+              "le",
+              "lock",
+              9
+            ]
+          ],
+          "requirement_refs": [
+            "R1"
+          ]
+        },
+        {
+          "id": "S1",
+          "role": "ensures",
+          "expr": [
+            "implies",
+            [
+              "ge",
+              "lock",
+              7
+            ],
+            [
+              "eq",
+              "result",
+              0
+            ]
+          ],
+          "requirement_refs": [
+            "R2"
+          ]
+        },
+        {
+          "id": "S2",
+          "role": "ensures",
+          "expr": [
+            "implies",
+            [
+              "and",
+              [
+                "not",
+                [
+                  "ge",
+                  "lock",
+                  7
+                ]
+              ],
+              [
+                "ge",
+                "level",
+                8
+              ]
+            ],
+            [
+              "eq",
+              "result",
+              3
+            ]
+          ],
+          "requirement_refs": [
+            "R3"
+          ]
+        },
+        {
+          "id": "S3",
+          "role": "ensures",
+          "expr": [
+            "implies",
+            [
+              "and",
+              [
+                "not",
+                [
+                  "ge",
+                  "lock",
+                  7
+                ]
+              ],
+              [
+                "not",
+                [
+                  "ge",
+                  "level",
+                  8
+                ]
+              ],
+              [
+                "and",
+                [
+                  "ge",
+                  "level",
+                  4
+                ],
+                [
+                  "le",
+                  "zone",
+                  5
+                ]
+              ]
+            ],
+            [
+              "eq",
+              "result",
+              2
+            ]
+          ],
+          "requirement_refs": [
+            "R4"
+          ]
+        }
+      ],
+      "guards": {},
+      "issues": []
+    }
+  ],
+  "alignment": [
+    {
+      "schema": "nacsl-alignment-1",
+      "findings": [
+        {
+          "category": "OMISSION",
+          "severity": "HIGH",
+          "refs": [
+            "N:L4",
+            "R:R5"
+          ],
+          "fact": "末尾默认分支没有形式义务。",
+          "hypothesis": "T2 漏掉前面条件均未命中时的返回值。"
+        }
+      ]
+    },
+    {
+      "schema": "nacsl-alignment-1",
+      "findings": []
+    }
+  ],
+  "diagnosis": [
+    {
+      "schema": "nacsl-diagnosis-1",
+      "proposals": [
+        {
+          "finding_refs": [
+            "F1"
+          ],
+          "evidence_refs": [
+            "R:R5",
+            "EV:SOURCE_COVERAGE"
+          ],
+          "stage": "T2",
+          "action": "ADD_POSTCONDITION",
+          "impact": "增加 R5 的后置条款，保留已有契约。",
+          "verification": "核对旧义务保留并重新读回 ACSL。"
+        }
+      ]
+    }
+  ],
+  "repair": [
+    {
+      "schema": "nacsl-t2-1",
+      "status": "OK",
+      "S": [
+        {
+          "id": "S0",
+          "role": "requires",
+          "expr": [
+            "and",
+            [
+              "ge",
+              "level",
+              0
+            ],
+            [
+              "le",
+              "level",
+              9
+            ],
+            [
+              "ge",
+              "zone",
+              0
+            ],
+            [
+              "le",
+              "zone",
+              9
+            ],
+            [
+              "ge",
+              "lock",
+              0
+            ],
+            [
+              "le",
+              "lock",
+              9
+            ]
+          ],
+          "requirement_refs": [
+            "R1"
+          ]
+        },
+        {
+          "id": "S1",
+          "role": "ensures",
+          "expr": [
+            "implies",
+            [
+              "ge",
+              "lock",
+              7
+            ],
+            [
+              "eq",
+              "result",
+              0
+            ]
+          ],
+          "requirement_refs": [
+            "R2"
+          ]
+        },
+        {
+          "id": "S2",
+          "role": "ensures",
+          "expr": [
+            "implies",
+            [
+              "and",
+              [
+                "not",
+                [
+                  "ge",
+                  "lock",
+                  7
+                ]
+              ],
+              [
+                "ge",
+                "level",
+                8
+              ]
+            ],
+            [
+              "eq",
+              "result",
+              3
+            ]
+          ],
+          "requirement_refs": [
+            "R3"
+          ]
+        },
+        {
+          "id": "S3",
+          "role": "ensures",
+          "expr": [
+            "implies",
+            [
+              "and",
+              [
+                "not",
+                [
+                  "ge",
+                  "lock",
+                  7
+                ]
+              ],
+              [
+                "not",
+                [
+                  "ge",
+                  "level",
+                  8
+                ]
+              ],
+              [
+                "and",
+                [
+                  "ge",
+                  "level",
+                  4
+                ],
+                [
+                  "le",
+                  "zone",
+                  5
+                ]
+              ]
+            ],
+            [
+              "eq",
+              "result",
+              2
+            ]
+          ],
+          "requirement_refs": [
+            "R4"
+          ]
+        },
+        {
+          "id": "S4",
+          "role": "ensures",
+          "expr": [
+            "implies",
+            [
+              "not",
+              [
+                "or",
+                [
+                  "ge",
+                  "lock",
+                  7
+                ],
+                [
+                  "ge",
+                  "level",
+                  8
+                ],
+                [
+                  "and",
+                  [
+                    "ge",
+                    "level",
+                    4
+                  ],
+                  [
+                    "le",
+                    "zone",
+                    5
+                  ]
+                ]
+              ]
+            ],
+            [
+              "eq",
+              "result",
+              1
+            ]
+          ],
+          "requirement_refs": [
+            "R5"
+          ]
+        }
+      ],
+      "guards": {},
+      "issues": []
+    }
+  ]
+}

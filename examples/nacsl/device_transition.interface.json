@@ -1,0 +1,13 @@
+{
+  "schema": "nacsl-interface-1",
+  "function": "device_transition",
+  "parameters": [
+    "state",
+    "signal",
+    "fault"
+  ],
+  "return_type": "int",
+  "data_model": "LP64",
+  "frame": "nothing",
+  "parameter_aliases": {"状态": "state", "信号": "signal", "故障标志": "fault"}
+}

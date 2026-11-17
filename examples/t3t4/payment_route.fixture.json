@@ -1,0 +1,110 @@
+{
+  "schema": "t3t4-candidate-1",
+  "roots": [
+    "Leaf3",
+    "Leaf2",
+    "Leaf1",
+    "Leaf0"
+  ],
+  "nodes": [
+    {
+      "id": "Leaf3",
+      "kind": "clause",
+      "role": "ensures",
+      "s_id": "S3",
+      "path": "",
+      "expr": [
+        "implies",
+        [
+          "eq",
+          "lock",
+          1
+        ],
+        [
+          "eq",
+          "result",
+          -1
+        ]
+      ],
+      "guard": null
+    },
+    {
+      "id": "Leaf2",
+      "kind": "clause",
+      "role": "ensures",
+      "s_id": "S2",
+      "path": "",
+      "expr": [
+        "ge",
+        "result",
+        0
+      ],
+      "guard": "open"
+    },
+    {
+      "id": "Leaf1",
+      "kind": "clause",
+      "role": "ensures",
+      "s_id": "S1",
+      "path": "",
+      "expr": [
+        "and",
+        [
+          "ge",
+          "result",
+          10
+        ],
+        [
+          "le",
+          "result",
+          14
+        ]
+      ],
+      "guard": "expedited"
+    },
+    {
+      "id": "Leaf0",
+      "kind": "clause",
+      "role": "requires",
+      "s_id": "S0",
+      "path": "",
+      "expr": [
+        "and",
+        [
+          "ge",
+          "risk",
+          0
+        ],
+        [
+          "le",
+          "risk",
+          9
+        ],
+        [
+          "ge",
+          "priority",
+          0
+        ],
+        [
+          "le",
+          "priority",
+          9
+        ],
+        [
+          "or",
+          [
+            "eq",
+            "lock",
+            0
+          ],
+          [
+            "eq",
+            "lock",
+            1
+          ]
+        ]
+      ],
+      "guard": null
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "schema": "nacsl-interface-1",
+  "function": "sensor_envelope",
+  "parameters": ["sample", "lower", "upper", "mode"],
+  "return_type": "int",
+  "data_model": "LP64",
+  "frame": "nothing",
+  "parameter_aliases": {"采样值": "sample", "校准下界": "lower", "校准上界": "upper", "工作模式": "mode"}
+}

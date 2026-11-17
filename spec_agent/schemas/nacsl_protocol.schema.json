@@ -1,0 +1,584 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:specagent:nacsl:protocol:1",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/interface"
+    },
+    {
+      "$ref": "#/$defs/t1"
+    },
+    {
+      "$ref": "#/$defs/t2"
+    },
+    {
+      "$ref": "#/$defs/alignment"
+    },
+    {
+      "$ref": "#/$defs/diagnosis"
+    }
+  ],
+  "$defs": {
+    "expr": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "eq",
+                "ne",
+                "le",
+                "lt",
+                "ge",
+                "gt"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/operand"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "and",
+                "or"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/expr"
+          },
+          "minItems": 3,
+          "maxItems": 65
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "not"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/expr"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "implies"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/expr"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      ]
+    },
+    "operand": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+        },
+        {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        }
+      ]
+    },
+    "guardExpr": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "eq",
+                "ne",
+                "le",
+                "lt",
+                "ge",
+                "gt"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/operand"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "and",
+                "or"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/guardExpr"
+          },
+          "minItems": 3,
+          "maxItems": 65
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "not"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/guardExpr"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "implies"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/guardExpr"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "const": "ref"
+            },
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+            }
+          ],
+          "items": false,
+          "minItems": 2
+        }
+      ]
+    },
+    "interface": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "nacsl-interface-1"
+        },
+        "function": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+          },
+          "maxItems": 20
+        },
+        "return_type": {
+          "const": "int"
+        },
+        "data_model": {
+          "enum": [
+            "LP64",
+            "ILP32"
+          ]
+        },
+        "frame": {
+          "const": "nothing"
+        },
+        "parameter_aliases": {
+          "type": "object",
+          "maxProperties": 64,
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z_\u3400-\u9fff][A-Za-z0-9_\u3400-\u9fff]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "schema",
+        "function",
+        "parameters",
+        "return_type",
+        "data_model",
+        "frame"
+      ],
+      "additionalProperties": false
+    },
+    "t1": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "nacsl-t1-1"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "REQUIREMENT",
+                  "BACKGROUND"
+                ]
+              },
+              "anchors": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "line": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "quote": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "occurrence": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "required": [
+                    "line",
+                    "quote"
+                  ],
+                  "additionalProperties": false
+                },
+                "maxItems": 32,
+                "minItems": 1
+              },
+              "interpretation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              }
+            },
+            "required": [
+              "kind",
+              "anchors",
+              "interpretation"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 128
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "schema",
+        "items",
+        "issues"
+      ],
+      "additionalProperties": false
+    },
+    "t2": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "nacsl-t2-1"
+        },
+        "status": {
+          "enum": [
+            "OK",
+            "NEEDS_REVIEW",
+            "UNSUPPORTED"
+          ]
+        },
+        "S": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+              },
+              "role": {
+                "enum": [
+                  "requires",
+                  "ensures"
+                ]
+              },
+              "expr": {
+                "$ref": "#/$defs/expr"
+              },
+              "requirement_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+                },
+                "maxItems": 128,
+                "minItems": 1
+              },
+              "guard": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+              }
+            },
+            "required": [
+              "id",
+              "role",
+              "expr",
+              "requirement_refs"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 128
+        },
+        "guards": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+          },
+          "maxProperties": 48,
+          "additionalProperties": {
+            "$ref": "#/$defs/guardExpr"
+          }
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/issue"
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "schema",
+        "status",
+        "S",
+        "guards",
+        "issues"
+      ],
+      "additionalProperties": false
+    },
+    "alignment": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "nacsl-alignment-1"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "category": {
+                "enum": [
+                  "OMISSION",
+                  "CONDITION",
+                  "BOUNDARY",
+                  "STRENGTH",
+                  "AMBIGUITY",
+                  "CONFLICT",
+                  "UNSUPPORTED",
+                  "OTHER"
+                ]
+              },
+              "severity": {
+                "enum": [
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH"
+                ]
+              },
+              "refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                },
+                "maxItems": 32
+              },
+              "fact": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "hypothesis": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              }
+            },
+            "required": [
+              "category",
+              "severity",
+              "refs",
+              "fact",
+              "hypothesis"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "schema",
+        "findings"
+      ],
+      "additionalProperties": false
+    },
+    "diagnosis": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "nacsl-diagnosis-1"
+        },
+        "proposals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "finding_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                },
+                "maxItems": 32
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                },
+                "maxItems": 32
+              },
+              "stage": {
+                "enum": [
+                  "T1",
+                  "T2",
+                  "T3",
+                  "T4",
+                  "INPUT",
+                  "TOOL"
+                ]
+              },
+              "action": {
+                "enum": [
+                  "ADD_POSTCONDITION",
+                  "HUMAN_REVIEW",
+                  "REPORT"
+                ]
+              },
+              "impact": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "verification": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              }
+            },
+            "required": [
+              "finding_refs",
+              "evidence_refs",
+              "stage",
+              "action",
+              "impact",
+              "verification"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "schema",
+        "proposals"
+      ],
+      "additionalProperties": false
+    },
+    "issue": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "AMBIGUITY",
+            "CONFLICT",
+            "MISSING_INFORMATION",
+            "UNSUPPORTED",
+            "NEW_ASSUMPTION"
+          ]
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "maxItems": 32
+        }
+      },
+      "required": [
+        "kind",
+        "detail",
+        "refs"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

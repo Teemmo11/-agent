@@ -1,0 +1,176 @@
+{
+  "type": "object",
+  "required": [
+    "function_spec",
+    "callee_expectations"
+  ],
+  "properties": {
+    "function_spec": {
+      "type": "object",
+      "required": [
+        "function",
+        "expected_behavior",
+        "pre_condition",
+        "post_conditions",
+        "requirement_refs",
+        "conflicts",
+        "ambiguities"
+      ],
+      "properties": {
+        "function": {
+          "type": "object",
+          "required": [
+            "name",
+            "signature"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "signature": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "expected_behavior": {
+          "type": "string"
+        },
+        "pre_condition": {
+          "type": "object",
+          "required": [
+            "natural_language",
+            "formal_candidate"
+          ],
+          "properties": {
+            "natural_language": {
+              "type": "string"
+            },
+            "formal_candidate": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "post_conditions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "clause_id",
+              "natural_language",
+              "formal_candidate",
+              "guard",
+              "requirement_refs",
+              "evidence_refs"
+            ],
+            "properties": {
+              "clause_id": {
+                "type": "string",
+                "pattern": "[A-Za-z][A-Za-z0-9_]{0,63}"
+              },
+              "natural_language": {
+                "type": "string"
+              },
+              "formal_candidate": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "guard": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "requirement_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "evidence_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "minItems": 1,
+          "maxItems": 64
+        },
+        "requirement_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "conflicts": {
+          "type": "array",
+          "items": {
+            "type": [
+              "object",
+              "string"
+            ]
+          }
+        },
+        "ambiguities": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "callee_expectations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "callee",
+          "callsite_id",
+          "expected_pre_nl",
+          "expected_post_nl",
+          "requirement_refs",
+          "evidence"
+        ],
+        "properties": {
+          "callee": {
+            "type": "string"
+          },
+          "callsite_id": {
+            "type": "string"
+          },
+          "expected_pre_nl": {
+            "type": "string"
+          },
+          "expected_post_nl": {
+            "type": "string"
+          },
+          "requirement_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

@@ -1,0 +1,453 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:specagent:t3t4:b:1",
+  "type": "object",
+  "properties": {
+    "header": {
+      "type": "object",
+      "properties": {
+        "schema": {
+          "const": "t3t4-b-1"
+        },
+        "rules": {
+          "const": "t3t4-rules-1"
+        },
+        "signature": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "object",
+          "properties": {
+            "model": {
+              "enum": [
+                "LP64",
+                "ILP32"
+              ]
+            },
+            "int_bits": {
+              "const": 32
+            },
+            "signed": {
+              "const": true
+            },
+            "frame": {
+              "const": "nothing"
+            },
+            "scope": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "model",
+            "int_bits",
+            "signed",
+            "frame",
+            "scope"
+          ],
+          "additionalProperties": false
+        },
+        "symbols": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "signed int32"
+              },
+              "state": {
+                "enum": [
+                  "entry",
+                  "return"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "state"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "material": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+            },
+            "kind": {
+              "enum": [
+                "AUTHORED",
+                "SYNTHETIC"
+              ]
+            },
+            "sha256": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "sha256"
+          ],
+          "additionalProperties": false
+        },
+        "input_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "frozen_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "schema",
+        "rules",
+        "signature",
+        "domain",
+        "symbols",
+        "material",
+        "input_sha256",
+        "frozen_sha256"
+      ],
+      "additionalProperties": false
+    },
+    "roots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+      },
+      "maxItems": 4096
+    },
+    "nodes": {
+      "type": "object",
+      "maxProperties": 4096,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "object",
+                "properties": {
+                  "s_id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+                  },
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(|/args/[0-9]+)$"
+                  },
+                  "s_version": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "required": [
+                  "s_id",
+                  "path",
+                  "s_version"
+                ],
+                "additionalProperties": false
+              },
+              "role": {
+                "enum": [
+                  "requires",
+                  "ensures"
+                ]
+              },
+              "kind": {
+                "const": "clause"
+              },
+              "expr": {
+                "$ref": "#/$defs/expr"
+              },
+              "guard": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "origin",
+              "role",
+              "kind",
+              "expr",
+              "guard"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "origin": {
+                "type": "object",
+                "properties": {
+                  "s_id": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+                  },
+                  "path": {
+                    "type": "string",
+                    "pattern": "^(|/args/[0-9]+)$"
+                  },
+                  "s_version": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$"
+                  }
+                },
+                "required": [
+                  "s_id",
+                  "path",
+                  "s_version"
+                ],
+                "additionalProperties": false
+              },
+              "role": {
+                "enum": [
+                  "requires",
+                  "ensures"
+                ]
+              },
+              "kind": {
+                "const": "group"
+              },
+              "combine": {
+                "const": "and"
+              },
+              "members": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+                },
+                "maxItems": 4096
+              }
+            },
+            "required": [
+              "origin",
+              "role",
+              "kind",
+              "combine",
+              "members"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "guards": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+      },
+      "maxProperties": 48,
+      "additionalProperties": {
+        "$ref": "#/$defs/guardExpr"
+      }
+    }
+  },
+  "required": [
+    "header",
+    "roots",
+    "nodes",
+    "guards"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "expr": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "eq",
+                "ne",
+                "le",
+                "lt",
+                "ge",
+                "gt"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/operand"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "and",
+                "or"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/expr"
+          },
+          "minItems": 3,
+          "maxItems": 65
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "not"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/expr"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "implies"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/expr"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      ]
+    },
+    "operand": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+        },
+        {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        }
+      ]
+    },
+    "guardExpr": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "eq",
+                "ne",
+                "le",
+                "lt",
+                "ge",
+                "gt"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/operand"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "and",
+                "or"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/guardExpr"
+          },
+          "minItems": 3,
+          "maxItems": 65
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "not"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/guardExpr"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "implies"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/guardExpr"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "const": "ref"
+            },
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+            }
+          ],
+          "items": false,
+          "minItems": 2
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "schema": "nacsl-interface-1",
+  "function": "unsupported_growth",
+  "parameters": [
+    "amount",
+    "rate"
+  ],
+  "return_type": "int",
+  "data_model": "LP64",
+  "frame": "nothing",
+  "parameter_aliases": {"数量": "amount", "费率": "rate"}
+}

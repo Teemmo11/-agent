@@ -1,0 +1,26 @@
+{
+  "sensor_envelope": [
+    ["and", ["ge", "sample", -5], ["le", "sample", 5],
+      ["ge", "lower", -5], ["le", "lower", 5], ["ge", "upper", -5], ["le", "upper", 5],
+      ["or", ["eq", "mode", 0], ["eq", "mode", 2]], ["le", "lower", "upper"]],
+    ["and",
+      ["implies", ["eq", "mode", 0], ["eq", "result", 0]],
+      ["implies", ["and", ["eq", "mode", 2], ["lt", "sample", "lower"]], ["eq", "result", "lower"]],
+      ["implies", ["and", ["eq", "mode", 2], ["gt", "sample", "upper"]], ["eq", "result", "upper"]],
+      ["implies", ["and", ["eq", "mode", 2], ["ge", "sample", "lower"], ["le", "sample", "upper"]],
+        ["eq", "result", "sample"]]]
+  ],
+  "audit_disposition": [
+    ["and", ["or", ["eq", "risk", -1], ["eq", "risk", 2], ["eq", "risk", 5]],
+      ["or", ["eq", "review", 0], ["eq", "review", 1]], ["ge", "level", 1], ["le", "level", 4]],
+    ["and",
+      ["implies", ["eq", "risk", -1], ["or", ["eq", "result", 90], ["eq", "result", 91]]],
+      ["implies", ["and", ["or", ["eq", "risk", 2], ["eq", "risk", 5]], ["eq", "review", 1]],
+        ["and", ["ge", "result", 20], ["le", "result", 29]]],
+      ["implies", ["and", ["or", ["eq", "risk", 2], ["eq", "risk", 5]], ["eq", "review", 1],
+          ["ge", "level", 3]], ["ne", "result", 25]],
+      ["implies", ["and", ["eq", "risk", 5], ["eq", "review", 0]], ["eq", "result", 50]],
+      ["implies", ["and", ["eq", "risk", 2], ["eq", "review", 0]],
+        ["or", ["eq", "result", 10], ["eq", "result", 11]]]]
+  ]
+}

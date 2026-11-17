@@ -1,0 +1,176 @@
+{
+  "schema": "t3t4-input-1",
+  "id": "relay_transition",
+  "params": [
+    "state",
+    "signal",
+    "timeout"
+  ],
+  "data_model": "LP64",
+  "frame": "nothing",
+  "material_id": "relay_transition",
+  "material_kind": "SYNTHETIC",
+  "R": [
+    {
+      "id": "R0",
+      "text": "状态在 0 至 2，信号与超时标志非负。",
+      "lines": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": "R1",
+      "text": "状态为 1 时，信号为 2 或超时标志为 1 且信号非零则返回 7；否则返回 8 或 9。其余状态返回原状态。",
+      "lines": [
+        2,
+        2
+      ]
+    }
+  ],
+  "S": [
+    {
+      "id": "S0",
+      "role": "requires",
+      "expr": [
+        "and",
+        [
+          "ge",
+          "state",
+          0
+        ],
+        [
+          "le",
+          "state",
+          2
+        ],
+        [
+          "ge",
+          "signal",
+          0
+        ],
+        [
+          "ge",
+          "timeout",
+          0
+        ]
+      ],
+      "requirement_refs": [
+        "R0"
+      ]
+    },
+    {
+      "id": "S1",
+      "role": "ensures",
+      "expr": [
+        "and",
+        [
+          "implies",
+          [
+            "eq",
+            "state",
+            1
+          ],
+          [
+            "or",
+            [
+              "and",
+              [
+                "or",
+                [
+                  "eq",
+                  "signal",
+                  2
+                ],
+                [
+                  "and",
+                  [
+                    "eq",
+                    "timeout",
+                    1
+                  ],
+                  [
+                    "not",
+                    [
+                      "eq",
+                      "signal",
+                      0
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "eq",
+                "result",
+                7
+              ]
+            ],
+            [
+              "and",
+              [
+                "not",
+                [
+                  "or",
+                  [
+                    "eq",
+                    "signal",
+                    2
+                  ],
+                  [
+                    "and",
+                    [
+                      "eq",
+                      "timeout",
+                      1
+                    ],
+                    [
+                      "not",
+                      [
+                        "eq",
+                        "signal",
+                        0
+                      ]
+                    ]
+                  ]
+                ]
+              ],
+              [
+                "or",
+                [
+                  "eq",
+                  "result",
+                  8
+                ],
+                [
+                  "eq",
+                  "result",
+                  9
+                ]
+              ]
+            ]
+          ]
+        ],
+        [
+          "implies",
+          [
+            "not",
+            [
+              "eq",
+              "state",
+              1
+            ]
+          ],
+          [
+            "eq",
+            "result",
+            "state"
+          ]
+        ]
+      ],
+      "requirement_refs": [
+        "R1"
+      ]
+    }
+  ],
+  "guards": {}
+}

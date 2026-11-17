@@ -1,0 +1,11 @@
+{
+  "schema": "nacsl-interface-1",
+  "function": "ambiguous_route",
+  "parameters": [
+    "temperature"
+  ],
+  "return_type": "int",
+  "data_model": "LP64",
+  "frame": "nothing",
+  "parameter_aliases": {"温度输入": "temperature"}
+}

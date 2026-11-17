@@ -1,0 +1,339 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:specagent:t3t4:input-spans:1",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "t3t4-input-spans-1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+    },
+    "params": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+      },
+      "maxItems": 128
+    },
+    "data_model": {
+      "enum": [
+        "LP64",
+        "ILP32"
+      ]
+    },
+    "frame": {
+      "const": "nothing"
+    },
+    "R": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+          },
+          "text": {
+            "type": "string"
+          },
+          "spans": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "start": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "end": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "excerpt": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "required": [
+                "start",
+                "end",
+                "excerpt"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 32,
+            "minItems": 1
+          },
+          "review": {
+            "enum": [
+              "NOT_REVIEWED",
+              "REVIEWED",
+              "AMBIGUOUS",
+              "UNEXPRESSIBLE"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "spans"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 128
+    },
+    "S": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+          },
+          "role": {
+            "enum": [
+              "requires",
+              "ensures"
+            ]
+          },
+          "expr": {
+            "$ref": "#/$defs/expr"
+          },
+          "requirement_refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+            },
+            "maxItems": 128,
+            "minItems": 1
+          },
+          "guard": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "expr",
+          "requirement_refs"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 128
+    },
+    "guards": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+      },
+      "maxProperties": 48,
+      "additionalProperties": {
+        "$ref": "#/$defs/guardExpr"
+      }
+    },
+    "material_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+    },
+    "material_kind": {
+      "enum": [
+        "AUTHORED",
+        "SYNTHETIC"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "id",
+    "params",
+    "data_model",
+    "frame",
+    "R",
+    "S",
+    "guards"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "expr": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "eq",
+                "ne",
+                "le",
+                "lt",
+                "ge",
+                "gt"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/operand"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "and",
+                "or"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/expr"
+          },
+          "minItems": 3,
+          "maxItems": 65
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "not"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/expr"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "implies"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/expr"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        }
+      ]
+    },
+    "operand": {
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+        },
+        {
+          "type": "integer",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        }
+      ]
+    },
+    "guardExpr": {
+      "oneOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "eq",
+                "ne",
+                "le",
+                "lt",
+                "ge",
+                "gt"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/operand"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "and",
+                "or"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/guardExpr"
+          },
+          "minItems": 3,
+          "maxItems": 65
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "not"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/guardExpr"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "enum": [
+                "implies"
+              ]
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/guardExpr"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "const": "ref"
+            },
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+            }
+          ],
+          "items": false,
+          "minItems": 2
+        }
+      ]
+    }
+  }
+}

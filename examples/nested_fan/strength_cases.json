@@ -1,0 +1,49 @@
+{
+  "fan_command": {
+    "valid_inputs": [
+      {"id":"fan-zero-limit","inputs":{"requested":-128,"limit":0,"mode":2},"requirement":"REQ-003","reason":"Boost allows a zero limit and any signed request."},
+      {"id":"fan-max-limit","inputs":{"requested":127,"limit":100,"mode":1},"requirement":"REQ-003","reason":"Normal mode allows the upper limit boundary."}
+    ],
+    "invalid_inputs": [
+      {"id":"fan-bad-mode","inputs":{"requested":5,"limit":50,"mode":3},"requirement":"REQ-003","reason":"Mode 3 is outside the contract."},
+      {"id":"fan-bad-limit","inputs":{"requested":5,"limit":101,"mode":0},"requirement":"REQ-003","reason":"The limit exceeds 100 even in off mode."}
+    ],
+    "invalid_outputs": [
+      {"id":"fan-off-nonzero","inputs":{"requested":80,"limit":100,"mode":0},"result":1,"requirement":"REQ-003","reason":"Off mode returns exactly 0."},
+      {"id":"fan-normal-missing-minimum","inputs":{"requested":5,"limit":50,"mode":1},"result":5,"requirement":"REQ-003","reason":"Normal mode applies the minimum of 20 from REQ-002."},
+      {"id":"fan-normal-over-limit","inputs":{"requested":60,"limit":30,"mode":1},"result":31,"requirement":"REQ-003","reason":"Normal mode must cap the request at 30."},
+      {"id":"fan-boost-uses-request","inputs":{"requested":0,"limit":12,"mode":2},"result":0,"requirement":"REQ-003","reason":"Boost mode returns its limit of 12 regardless of request."}
+    ]
+  },
+  "target_speed": {
+    "valid_inputs": [
+      {"id":"target-zero-limit","inputs":{"requested":1,"limit":0},"requirement":"REQ-002","reason":"A zero limit is allowed even for a positive request."},
+      {"id":"target-negative-request","inputs":{"requested":-128,"limit":100},"requirement":"REQ-002","reason":"Every signed char request is permitted."}
+    ],
+    "invalid_inputs": [
+      {"id":"target-negative-limit","inputs":{"requested":5,"limit":-1},"requirement":"REQ-002","reason":"The limit must be nonnegative."},
+      {"id":"target-over-max-limit","inputs":{"requested":5,"limit":101},"requirement":"REQ-002","reason":"The limit must be at most 100."}
+    ],
+    "invalid_outputs": [
+      {"id":"target-nonpositive-nonzero","inputs":{"requested":0,"limit":100},"result":1,"requirement":"REQ-002","reason":"A zero request returns 0."},
+      {"id":"target-missing-minimum","inputs":{"requested":19,"limit":100},"result":19,"requirement":"REQ-002","reason":"The positive request below 20 must be raised to 20."},
+      {"id":"target-minimum-exceeds-limit","inputs":{"requested":5,"limit":12},"result":20,"requirement":"REQ-002","reason":"The limit of 12 takes precedence over the minimum of 20."},
+      {"id":"target-preservation-failure","inputs":{"requested":20,"limit":100},"result":21,"requirement":"REQ-002","reason":"A request of 20 within the limit must be returned unchanged."}
+    ]
+  },
+  "limit_speed": {
+    "valid_inputs": [
+      {"id":"limit-zero-allowed","inputs":{"requested":0,"limit":0},"requirement":"REQ-001","reason":"A zero limit and a zero request are both allowed."},
+      {"id":"limit-high-request","inputs":{"requested":127,"limit":100},"requirement":"REQ-001","reason":"A request above the limit remains a legal input and must be capped."}
+    ],
+    "invalid_inputs": [
+      {"id":"limit-negative-bound","inputs":{"requested":1,"limit":-1},"requirement":"REQ-001","reason":"The limit must be nonnegative."},
+      {"id":"limit-over-max-bound","inputs":{"requested":1,"limit":101},"requirement":"REQ-001","reason":"The limit must not exceed 100."}
+    ],
+    "invalid_outputs": [
+      {"id":"limit-returns-negative","inputs":{"requested":-1,"limit":100},"result":-1,"requirement":"REQ-001","reason":"A negative request must be returned as 0."},
+      {"id":"limit-off-by-one","inputs":{"requested":127,"limit":100},"result":101,"requirement":"REQ-001","reason":"The high request must be capped at 100."},
+      {"id":"limit-changed-in-range","inputs":{"requested":5,"limit":10},"result":6,"requirement":"REQ-001","reason":"An in-range request must be returned unchanged."}
+    ]
+  }
+}

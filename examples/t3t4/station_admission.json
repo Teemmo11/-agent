@@ -1,0 +1,211 @@
+{
+  "schema": "t3t4-input-1",
+  "id": "station_admission",
+  "params": [
+    "power",
+    "staff",
+    "alert"
+  ],
+  "data_model": "LP64",
+  "frame": "nothing",
+  "material_id": "station_admission",
+  "material_kind": "SYNTHETIC",
+  "R": [
+    {
+      "id": "R0",
+      "text": "功率和人数非负，警报编码只能是 0 或 1。",
+      "lines": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": "R1",
+      "text": "应急且就绪时，输出在 70 至 80，且不等于 75。",
+      "lines": [
+        2,
+        2
+      ]
+    },
+    {
+      "id": "R2",
+      "text": "常规且就绪时，输出在 20 至 30。",
+      "lines": [
+        3,
+        3
+      ]
+    },
+    {
+      "id": "R3",
+      "text": "应急且就绪时，输出不得等于 79。",
+      "lines": [
+        4,
+        4
+      ]
+    },
+    {
+      "id": "R4",
+      "text": "常规且就绪时，输出不得等于 29。",
+      "lines": [
+        5,
+        5
+      ]
+    }
+  ],
+  "S": [
+    {
+      "id": "S0",
+      "role": "requires",
+      "expr": [
+        "and",
+        [
+          "ge",
+          "power",
+          0
+        ],
+        [
+          "ge",
+          "staff",
+          0
+        ],
+        [
+          "or",
+          [
+            "eq",
+            "alert",
+            0
+          ],
+          [
+            "eq",
+            "alert",
+            1
+          ]
+        ]
+      ],
+      "requirement_refs": [
+        "R0"
+      ]
+    },
+    {
+      "id": "S1",
+      "role": "ensures",
+      "expr": [
+        "and",
+        [
+          "ge",
+          "result",
+          70
+        ],
+        [
+          "le",
+          "result",
+          80
+        ],
+        [
+          "not",
+          [
+            "eq",
+            "result",
+            75
+          ]
+        ]
+      ],
+      "requirement_refs": [
+        "R1"
+      ],
+      "guard": "emergency"
+    },
+    {
+      "id": "S2",
+      "role": "ensures",
+      "expr": [
+        "and",
+        [
+          "ge",
+          "result",
+          20
+        ],
+        [
+          "le",
+          "result",
+          30
+        ]
+      ],
+      "requirement_refs": [
+        "R2"
+      ],
+      "guard": "routine"
+    },
+    {
+      "id": "S3",
+      "role": "ensures",
+      "expr": [
+        "not",
+        [
+          "eq",
+          "result",
+          79
+        ]
+      ],
+      "requirement_refs": [
+        "R3"
+      ],
+      "guard": "emergency"
+    },
+    {
+      "id": "S4",
+      "role": "ensures",
+      "expr": [
+        "not",
+        [
+          "eq",
+          "result",
+          29
+        ]
+      ],
+      "requirement_refs": [
+        "R4"
+      ],
+      "guard": "routine"
+    }
+  ],
+  "guards": {
+    "ready": [
+      "and",
+      [
+        "ge",
+        "power",
+        4
+      ],
+      [
+        "ge",
+        "staff",
+        1
+      ]
+    ],
+    "emergency": [
+      "and",
+      [
+        "ref",
+        "ready"
+      ],
+      [
+        "eq",
+        "alert",
+        1
+      ]
+    ],
+    "routine": [
+      "and",
+      [
+        "ref",
+        "ready"
+      ],
+      [
+        "eq",
+        "alert",
+        0
+      ]
+    ]
+  }
+}

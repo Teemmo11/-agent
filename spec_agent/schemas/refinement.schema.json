@@ -1,0 +1,13 @@
+{
+  "type":"object","additionalProperties":false,
+  "required":["refinement_id","schema_version","baseline_evaluation","execution_status","decision","stop_reason","spec_id","proposal_mode","reviewer","iterations","selected_candidate","source_program_changed","decision_scope","errors","budget","logging"],
+  "properties":{
+    "refinement_id":{"type":"string"},"schema_version":{"enum":[1]},"baseline_evaluation":{"type":"string"},
+    "execution_status":{"enum":["COMPLETED","PARTIAL","ERROR","CANCELLED"]},
+    "decision":{"enum":["ACCEPTED","REJECTED","NEEDS_REVIEW","INCONCLUSIVE"]},"stop_reason":{"type":"string"},
+    "spec_id":{"type":["string","null"]},"proposal_mode":{"enum":["real","fixture"]},"reviewer":{"enum":["none","real","fixture"]},
+    "iterations":{"type":"array","items":{"type":"object"}},"selected_candidate":{"type":["object","null"]},
+    "source_program_changed":{"type":"boolean"},"decision_scope":{"type":"string"},
+    "errors":{"type":"array","items":{"type":"object"}},"budget":{"type":"object"},"logging":{"type":"object"}
+  }
+}

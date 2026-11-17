@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "spec-generation-agent"
+version = "0.4.0"
+description = "Hoare specification generation, verification and evidence-referenced quality assessment for C"
+requires-python = ">=3.11"
+dependencies = ["pycparser>=2.22,<4"]
+[project.scripts]
+spec-agent = "spec_agent.cli:main"
+[tool.setuptools.packages.find]
+include = ["spec_agent*"]
+[tool.setuptools.package-data]
+spec_agent = ["schemas/*.json", "prompts/*.md", "monitor/assets/*"]

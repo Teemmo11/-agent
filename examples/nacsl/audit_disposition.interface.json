@@ -1,0 +1,9 @@
+{
+  "schema": "nacsl-interface-1",
+  "function": "audit_disposition",
+  "parameters": ["risk", "review", "level"],
+  "return_type": "int",
+  "data_model": "ILP32",
+  "frame": "nothing",
+  "parameter_aliases": {"风险码": "risk", "复核标记": "review", "记录级别": "level"}
+}

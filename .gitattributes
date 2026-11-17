@@ -1,0 +1,3 @@
+* text=auto eol=lf
+# Preserve original bytes of hash-bound formal evidence on every platform.
+evidence/** -text

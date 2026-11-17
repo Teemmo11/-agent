@@ -1,0 +1,170 @@
+{
+  "schema": "t3t4-input-1",
+  "id": "payment_route",
+  "params": [
+    "risk",
+    "priority",
+    "lock"
+  ],
+  "data_model": "LP64",
+  "frame": "nothing",
+  "material_id": "payment_route",
+  "material_kind": "SYNTHETIC",
+  "R": [
+    {
+      "id": "R0",
+      "text": "风险和优先级在 0 至 9，锁只能是 0 或 1。",
+      "lines": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": "R1",
+      "text": "未锁且高优先低风险时，返回 10 至 14。",
+      "lines": [
+        2,
+        2
+      ]
+    },
+    {
+      "id": "R2",
+      "text": "未锁时输出非负。",
+      "lines": [
+        3,
+        3
+      ]
+    },
+    {
+      "id": "R3",
+      "text": "锁定时只能返回 -1。",
+      "lines": [
+        4,
+        4
+      ]
+    }
+  ],
+  "S": [
+    {
+      "id": "S0",
+      "role": "requires",
+      "expr": [
+        "and",
+        [
+          "ge",
+          "risk",
+          0
+        ],
+        [
+          "le",
+          "risk",
+          9
+        ],
+        [
+          "ge",
+          "priority",
+          0
+        ],
+        [
+          "le",
+          "priority",
+          9
+        ],
+        [
+          "or",
+          [
+            "eq",
+            "lock",
+            0
+          ],
+          [
+            "eq",
+            "lock",
+            1
+          ]
+        ]
+      ],
+      "requirement_refs": [
+        "R0"
+      ]
+    },
+    {
+      "id": "S1",
+      "role": "ensures",
+      "expr": [
+        "and",
+        [
+          "ge",
+          "result",
+          10
+        ],
+        [
+          "le",
+          "result",
+          14
+        ]
+      ],
+      "requirement_refs": [
+        "R1"
+      ],
+      "guard": "expedited"
+    },
+    {
+      "id": "S2",
+      "role": "ensures",
+      "expr": [
+        "ge",
+        "result",
+        0
+      ],
+      "requirement_refs": [
+        "R2"
+      ],
+      "guard": "open"
+    },
+    {
+      "id": "S3",
+      "role": "ensures",
+      "expr": [
+        "implies",
+        [
+          "eq",
+          "lock",
+          1
+        ],
+        [
+          "eq",
+          "result",
+          -1
+        ]
+      ],
+      "requirement_refs": [
+        "R3"
+      ]
+    }
+  ],
+  "guards": {
+    "open": [
+      "eq",
+      "lock",
+      0
+    ],
+    "expedited": [
+      "and",
+      [
+        "ref",
+        "open"
+      ],
+      [
+        "ge",
+        "priority",
+        5
+      ],
+      [
+        "le",
+        "risk",
+        2
+      ]
+    ]
+  }
+}

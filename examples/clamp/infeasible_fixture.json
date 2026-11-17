@@ -1,0 +1,43 @@
+{
+  "clamp": {
+    "function_spec": {
+      "function": {
+        "name": "clamp",
+        "signature": "int clamp(int x, int low, int high)"
+      },
+      "expected_behavior": "Return a value in the inclusive interval.",
+      "pre_condition": {
+        "natural_language": "Contradictory precondition for feasibility regression only",
+        "formal_candidate": "x > 0 && x < 0"
+      },
+      "post_conditions": [
+        {
+          "clause_id": "Q1",
+          "natural_language": "Lower bound",
+          "formal_candidate": "result >= low",
+          "guard": null,
+          "requirement_refs": [
+            "REQ-001"
+          ],
+          "evidence_refs": []
+        },
+        {
+          "clause_id": "Q2",
+          "natural_language": "Upper bound",
+          "formal_candidate": "result <= high",
+          "guard": null,
+          "requirement_refs": [
+            "REQ-001"
+          ],
+          "evidence_refs": []
+        }
+      ],
+      "requirement_refs": [
+        "REQ-001"
+      ],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    "callee_expectations": []
+  }
+}

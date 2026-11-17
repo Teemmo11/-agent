@@ -1,0 +1,13 @@
+{
+  "schema": "nacsl-interface-1",
+  "function": "access_decision",
+  "parameters": [
+    "level",
+    "zone",
+    "lock"
+  ],
+  "return_type": "int",
+  "data_model": "LP64",
+  "frame": "nothing",
+  "parameter_aliases": {"等级": "level", "区域": "zone", "锁定码": "lock"}
+}

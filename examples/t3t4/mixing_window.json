@@ -1,0 +1,148 @@
+{
+  "schema": "t3t4-input-1",
+  "id": "mixing_window",
+  "params": [
+    "batch",
+    "temperature"
+  ],
+  "data_model": "LP64",
+  "frame": "nothing",
+  "material_id": "mixing_window",
+  "material_kind": "SYNTHETIC",
+  "R": [
+    {
+      "id": "R0",
+      "text": "批次数必须大于等于 1，温度在 0 至 100。",
+      "lines": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": "R1",
+      "text": "热批次输出在 4 至 12 且不等于 9。",
+      "lines": [
+        2,
+        2
+      ]
+    },
+    {
+      "id": "R2",
+      "text": "非热批次只允许输出 1 或 2。",
+      "lines": [
+        3,
+        3
+      ]
+    }
+  ],
+  "S": [
+    {
+      "id": "S0",
+      "role": "requires",
+      "expr": [
+        "and",
+        [
+          "ge",
+          "batch",
+          1
+        ],
+        [
+          "ge",
+          "temperature",
+          0
+        ],
+        [
+          "le",
+          "temperature",
+          100
+        ]
+      ],
+      "requirement_refs": [
+        "R0"
+      ]
+    },
+    {
+      "id": "S1",
+      "role": "ensures",
+      "expr": [
+        "and",
+        [
+          "ge",
+          "result",
+          4
+        ],
+        [
+          "le",
+          "result",
+          12
+        ],
+        [
+          "not",
+          [
+            "eq",
+            "result",
+            9
+          ]
+        ]
+      ],
+      "requirement_refs": [
+        "R1"
+      ],
+      "guard": "hot"
+    },
+    {
+      "id": "S2",
+      "role": "ensures",
+      "expr": [
+        "implies",
+        [
+          "not",
+          [
+            "and",
+            [
+              "ge",
+              "temperature",
+              60
+            ],
+            [
+              "ge",
+              "batch",
+              2
+            ]
+          ]
+        ],
+        [
+          "or",
+          [
+            "eq",
+            "result",
+            1
+          ],
+          [
+            "eq",
+            "result",
+            2
+          ]
+        ]
+      ],
+      "requirement_refs": [
+        "R2"
+      ]
+    }
+  ],
+  "guards": {
+    "hot": [
+      "and",
+      [
+        "ge",
+        "temperature",
+        60
+      ],
+      [
+        "ge",
+        "batch",
+        2
+      ]
+    ]
+  }
+}

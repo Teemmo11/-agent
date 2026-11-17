@@ -1,0 +1,18 @@
+{
+  "type":"object",
+  "required":["evaluation_id","schema_version","evaluator_version","parent_run_ref","parent_run_id","execution_status","assessment_mode","context_completeness","verification_snapshot","dimensions","findings","coverage","limits","budget","stop_reason","errors","contexts","reviews","queries","source_and_spec_hashes","logging"],
+  "additionalProperties":false,
+  "properties":{
+    "evaluation_id":{"type":"string"},"schema_version":{"enum":[1]},"evaluator_version":{"type":"string"},
+    "parent_run_ref":{"type":"string"},"parent_run_id":{"type":["string","null"]},
+    "execution_status":{"enum":["COMPLETED","PARTIAL","BLOCKED","ERROR","CANCELLED"]},
+    "assessment_mode":{"type":"object"},"context_completeness":{"enum":["COMPLETE","PARTIAL","UNAVAILABLE"]},
+    "verification_snapshot":{"type":"object"},"dimensions":{"type":"object"},
+    "findings":{"type":"array","items":{"type":"object"}},"coverage":{"type":"object"},
+    "limits":{"type":"object"},"budget":{"type":"object"},"stop_reason":{"type":"string"},
+    "errors":{"type":"array","items":{"type":"object"}},"contexts":{"type":"array","items":{"type":"string"}},
+    "reviews":{"type":"array","items":{"type":"object"}},"queries":{"type":"array","items":{"type":"object"}},
+    "source_and_spec_hashes":{"type":"object"},"logging":{"type":"object"},
+    "strength":{"type":"object"}
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "type":"object",
+  "required":["schema_version","evaluator_version","spec_id","function","requirements","function_spec","evidence_ids","callsites","related_specs","caller_expectations","context_issues","omitted_context","optional","implementation_evidence_id","review_policy","context_completeness","estimated_input_tokens","within_budget","cache_key"],
+  "additionalProperties":false,
+  "properties":{
+    "schema_version":{"enum":[1]},"evaluator_version":{"type":"string"},"spec_id":{"type":"string"},
+    "function":{"type":"object"},"requirements":{"type":"array","items":{"type":"object"}},
+    "function_spec":{"type":"object"},"evidence_ids":{"type":"array","items":{"type":"string"}},
+    "callsites":{"type":"array","items":{"type":"object"}},"related_specs":{"type":"array","items":{"type":"object"}},
+    "caller_expectations":{"type":"array","items":{"type":"object"}},"context_issues":{"type":"array","items":{"type":"object"}},
+    "omitted_context":{"type":"array","items":{"type":"object"}},"optional":{"type":"object"},
+    "implementation_evidence_id":{"type":"string"},"review_policy":{"type":"string"},
+    "context_completeness":{"enum":["COMPLETE","PARTIAL"]},"estimated_input_tokens":{"type":"integer"},
+    "within_budget":{"type":"boolean"},"cache_key":{"type":"string","pattern":"[a-f0-9]{64}"}
+  }
+}

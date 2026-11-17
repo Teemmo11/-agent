@@ -1,0 +1,13 @@
+{
+  "schema": "nacsl-interface-1",
+  "function": "dispatch_priority",
+  "parameters": [
+    "urgent",
+    "queue",
+    "quota"
+  ],
+  "return_type": "int",
+  "data_model": "LP64",
+  "frame": "nothing",
+  "parameter_aliases": {"紧急标志": "urgent", "队列长度": "queue", "配额": "quota"}
+}

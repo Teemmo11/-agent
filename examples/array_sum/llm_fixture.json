@@ -1,0 +1,29 @@
+{
+  "sum_array": {
+    "function_spec": {
+      "function": {
+        "name": "sum_array",
+        "signature": "int sum_array(void)"
+      },
+      "expected_behavior": "Sum all ten elements of the fixed local array and return 45.",
+      "pre_condition": {
+        "natural_language": "No input precondition is required.",
+        "formal_candidate": "1"
+      },
+      "post_conditions": [
+        {
+          "clause_id": "Q1",
+          "natural_language": "The returned sum is 45.",
+          "formal_candidate": "result == 45",
+          "guard": null,
+          "requirement_refs": ["REQ-001"],
+          "evidence_refs": []
+        }
+      ],
+      "requirement_refs": ["REQ-001"],
+      "conflicts": [],
+      "ambiguities": []
+    },
+    "callee_expectations": []
+  }
+}
