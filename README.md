@@ -25,10 +25,53 @@ flowchart TD
     O -.-> UI["浏览器监控：流程、验证循环、P/Q、工具事件"]
 ```
 
+### 工作流与双 agent 调度
+
+上图展示基础验证流程。使用 `phase1` 可以单独启动第一阶段子 agent，使用 `phase2 --run` 可以处理已有运行。`agent` 将两个子 agent 串联，并共享模型调用和验证查询预算。
+
+```mermaid
+flowchart TD
+    C["agent 统一入口"] --> A["读入 C 源码和需求，保存输入快照"]
+
+    subgraph PHASE1["第一阶段子 agent · 规约生成与验证"]
+        A --> B["分析函数、调用点和分支条件"]
+        B -->|Hoare 分支| G["按函数组织上下文，生成候选 P/Q"]
+        B -->|静态分支| S["从源码发现安全属性"]
+        G --> V{"JSON、引用和表达式检查"}
+        V -->|拒绝且允许重试| F["将具体错误反馈给模型"]
+        F --> G
+        V -->|通过| P["传递调用期望，准备已接受的规约"]
+        P -->|还有函数| G
+        P -->|生成完成| T["构建模型并验证 P/Q 或静态属性"]
+        S --> T
+        V -->|无法继续| R["第一阶段结果与证据"]
+        T --> R
+    end
+
+    R --> D
+
+    subgraph PHASE2["第二阶段子 agent · 评估与修复"]
+        D{"按验证结论分流"}
+        D -->|性质成立且有 Hoare 规约| E["计算 PreCorr、PreComp 和 PostComp"]
+        D -->|性质违反且有源码映射| M["定位失败断言和相关源码指令"]
+        M --> X["模型提出修改，保存候选源码"]
+        D -->|可重试的工具故障| Y["沿用原源码及规约，限次重试"]
+        D -->|证据不足、超限或无法继续| H["保存诊断和停止原因"]
+        D -->|仅静态属性通过| J["汇总验证结果"]
+    end
+
+    X -->|冻结需求和 P/Q，重新验证| T
+    Y --> T
+    E --> J
+    H --> J
+```
+
 - **Hoare 分支**按调用者到被调函数的顺序生成规约。P 是允许的输入条件，Q 是在这些条件下函数正常返回时需要满足的性质。P 的可行性独立检查。P 不可行时，契约结论为 `VACUOUS`，即使各条 Q 的失败节点都不可达。
+- **第一阶段子 agent**可用 `phase1` 单独运行，也由 `agent` 自动调度。它为每个函数标出相关需求和直接调用关系，保留需求全文、分支条件与调用期望，并根据 JSON、引用或表达式错误进行限次重试。验证结论交由 C2Btor 和 rIC3 的证据流程判定。
 - **静态分支**由 C2Btor 按内置规则插入数组边界、指针、除零和有符号溢出等安全断言。Agent 的 AST 结果可帮助选择入口，插桩使用 C2Btor 自己的带类型程序表示。
 - **结果判定**中，P 的探针返回 SAT 表示存在满足 P 的输入。Q 或安全断言的 `bad` 返回 SAT 表示存在违反条件的可达路径，UNSAT 表示该失败状态在当前模型中不可达。工具故障或证据缺失时保留错误或未决状态。
-- **规约评估**由 `evaluate` 单独启动，以同一运行的快照为依据写入独立目录。强度模式检查合法输入保留率（PreCorr）、域外输入排除率（PreComp）、错误输出排除率（PostComp）。样例标签独立提供，错误输出查询使用独立返回值，未决项单独报告。
+- **规约评估**可通过 `evaluate` 或第二阶段子 agent 启动，以被评估运行的快照为依据写入独立目录。强度模式检查合法输入保留率（PreCorr）、域外输入排除率（PreComp）、错误输出排除率（PostComp）。样例标签独立提供，错误输出查询使用独立返回值，未决项单独报告。
+- **第二阶段子 agent**通过 `agent` 在第一阶段之后自动启动，或通过 `phase2 --run` 接管已有运行。它负责评估和修复分流，保存每轮 map 诊断、建议和候选源码，重验所有原有义务，验证成功后继续计算三个质量指标。
 
 ## 复现环境
 
@@ -61,6 +104,43 @@ python -m spec_agent doctor --probe-tools
 在线生成需要自行向兼容 OpenAI Chat Completions API 的提供方取得凭据，并仅在本机 `.env` 或环境变量中设置 `LLM_BASE_URL`（包含提供方要求的 API 路径）、`LLM_MODEL` 与 `LLM_API_KEY`。开启在线生成时，源码和需求上下文会发给配置的模型服务。可用 `python -m spec_agent doctor --probe-tools --check-llm` 主动发送一次 API 探测。
 
 ## 运行样例
+
+### 单独运行第一阶段子 agent
+
+```bash
+python -m spec_agent phase1 \
+  --source examples/clamp/program.c \
+  --requirements examples/clamp/requirements.md \
+  --branch hoare --require-real --spec-attempts 2 \
+  --output runs/clamp-phase1
+```
+
+`--spec-attempts` 包括首次请求，默认每个函数最多两次。`--max-input-tokens` 限制每次请求的估算输入量。请求超限时先移除和当前函数正文重复的调用点片段，再检查完整需求与调用证据能否放入预算。`generation/llm/functions/<函数 ID>/attempts/` 保存每次请求、输出和错误，`attempts.json` 记录被选中的轮次。`run` 和 `generate` 仍可用于单次生成流程。
+
+### 第一阶段、自动修复与第二阶段评估连贯运行
+
+下面的命令先生成并验证 buggy clamp 的规约。发现性质违反后，子 agent 用 map 和冻结规约请求模型提出源码修复，在新目录重跑验证，全部性质成立时继续评估。模型可返回需要复核，修复轮数最多为两轮。三个质量指标依赖独立标注文件。
+
+```bash
+python -m spec_agent agent \
+  --source examples/clamp/buggy.c \
+  --requirements examples/clamp/requirements.md \
+  --branch hoare --require-real \
+  --strength-cases examples/clamp/strength_cases.json \
+  --max-iterations 2 --output runs/clamp-agent
+```
+
+已有第一阶段运行可以直接交给子 agent。
+
+```bash
+python -m spec_agent phase2 --run "$RUN_DIR" \
+  --strength-cases examples/clamp/strength_cases.json \
+  --max-iterations 2 --output runs/clamp-phase2
+```
+
+子 agent 的入口记录在 `subagent.json`，每轮的 `diagnosis.json`、`proposal/`、`candidate/` 和新验证运行位于 `iterations/`，评估位于 `evaluations/`。原始源码和父运行保留，最终候选及其验证路径由 `final_run` 给出。自动源码修复保持函数签名和源码行号，便于保留现有调用点身份。`source_map` 提供静态指令来源，当前 rIC3 路径的执行轨迹标记为不可用。
+
+`--max-queries` 共享计入初始验证、重验和质量查询。`agent` 的 `--max-llm-calls` 和 `--total-token-budget` 由规约生成与模型修复共享。工具崩溃或超时最多重试一次，持续失败会保留错误并要求复核。P 不可行时需要复核前提。重验和评估都完成时命令返回 0，未决或需要复核时返回 3，配置或工件错误返回 2。
 
 ### 三层调用与图形界面
 

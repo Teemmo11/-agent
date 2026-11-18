@@ -4,6 +4,7 @@
 runs/
 evaluations/
 refinements/
+/phase2/
 __pycache__/
 *.pyc
 *.pyo

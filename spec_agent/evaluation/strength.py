@@ -162,13 +162,13 @@ def assess(plans, engine, *, metrics=METRICS):
             'functions': functions}
 
 
-def evaluate_strength(parent_root, config, cases_file, *, output='evaluations', require_real=False, limits=None):
+def evaluate_strength(parent_root, config, cases_file, *, output='evaluations', require_real=False, limits=None, budget=None):
     parent_path = Path(parent_root).resolve()
     if Path(output).resolve().is_relative_to(parent_path):
         raise AgentError('EVALUATION_CONFIG_INVALID', 'Evaluation output must be outside the immutable parent run')
-    limits = limits or Limits()
+    limits = budget.limits if budget is not None else limits or Limits()
     limits.validate()
-    budget = Budget(limits)
+    budget = budget if budget is not None else Budget(limits)
     store = ArtifactStore(output)
     root = store.root
     trace = RunTrace(root, store.run_id, secrets=(config.api_key,))

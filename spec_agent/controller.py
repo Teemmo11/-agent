@@ -18,11 +18,12 @@ from .errors import AgentError
 from .trace import RunTrace
 
 
-def run(sources,requirements,config,*,output='runs',generate_only=False,fixture=None,branch='both',entry=None,domain=None,require_real=False,log_max_bytes=32*1024*1024,require_unguarded_posts=False,on_run_created=None):
+def run(sources,requirements,config,*,output='runs',generate_only=False,fixture=None,branch='both',entry=None,domain=None,require_real=False,log_max_bytes=32*1024*1024,require_unguarded_posts=False,on_run_created=None,frozen_parent=None,verification_budget=None,generation_agent=None):
     store=ArtifactStore(output)
     trace=RunTrace(store.root,store.run_id,secrets=(config.api_key,),max_bytes=log_max_bytes)
     store.trace=trace
-    trace.emit('run.started',branch=branch,generate_only=generate_only,tool_mode=config.tool_mode,llm_mode='NOT_RUN' if branch=='static' else 'FIXTURE_LLM' if fixture else 'REAL',model=config.model)
+    trace.emit('run.started',branch=branch,generate_only=generate_only,tool_mode=config.tool_mode,llm_mode='NOT_RUN' if branch=='static' else 'CARRIED_SPECIFICATIONS' if frozen_parent else 'FIXTURE_LLM' if fixture else 'REAL',model=config.model,
+               generation_strategy='PHASE1_AGENT' if generation_agent else 'PIPELINE')
     if on_run_created:
         try:on_run_created(store.root)
         except Exception as exc:trace.emit('monitor.attach.failed',level='WARNING',error_type=type(exc).__name__)
@@ -30,6 +31,12 @@ def run(sources,requirements,config,*,output='runs',generate_only=False,fixture=
     result={'run_id':store.run_id,'mode':'MOCK_ALL' if config.tool_mode=='MOCK' else 'FIXTURE_LLM_REAL_TOOLS' if fixture else 'REAL','contracts':[],
             'static_properties':[],'failures':[],'evaluation':{'status':'NOT_RUN'},'phase':'1.1' if generate_only else '1.1+1.2'}
     try:
+        if frozen_parent:
+            if fixture or generate_only:
+                raise AgentError('CONFIG_INVALID','Frozen specifications require an independent verification run')
+            result['mode']=frozen_parent.report['mode']
+            if require_real and result['mode']!='REAL':
+                raise AgentError('MOCK_IN_REAL_RUN','Real-only mode requires a real parent')
         if branch not in ('both','hoare','static'):
             raise AgentError('CONFIG_INVALID','Unknown generation branch')
         if type(require_unguarded_posts) is not bool:
@@ -41,9 +48,18 @@ def run(sources,requirements,config,*,output='runs',generate_only=False,fixture=
         if require_real and (fixture or config.tool_mode!='REAL'):
             raise AgentError('MOCK_IN_REAL_RUN','Real-only mode rejects fixtures and mock tools')
         sources,req,info=store.snapshot(sources,requirements); result['input']=info
+        if frozen_parent:
+            if info['requirements_sha256']!=frozen_parent.info['requirements_sha256']:
+                raise AgentError('REPAIR_SCOPE_CHANGED','Requirements must stay frozen during source repair')
+            lineage={'parent_run':str(frozen_parent.root),'parent_dependencies':frozen_parent.dependencies,
+                     'source_program_changed':[row['sha256'] for row in info['sources']]!=[row['sha256'] for row in frozen_parent.info['sources']],
+                     'specifications':'FROZEN_PARENT_SPECIFICATIONS'}
+            store.write('input/repair_lineage.json',lineage)
         trace.emit('input.snapshotted',input=info,domain_knowledge_provided=domain is not None)
         expected_hashes={r['snapshot']:r['sha256'] for r in info['sources']}
         expected_hashes[str(req)]=info['requirements_sha256']
+        if frozen_parent:
+            expected_hashes[str(store.root/'input/repair_lineage.json')]=sha256_file(store.root/'input/repair_lineage.json')
         if domain is not None:
             store.write('input/domain_knowledge.json',{'text':domain})
         if require_unguarded_posts:
@@ -57,7 +73,7 @@ def run(sources,requirements,config,*,output='runs',generate_only=False,fixture=
         trace.emit('preflight.finished',**result['preflight'],artifact='toolchain_manifest.json')
         if config.tool_mode=='REAL' and caps.get('mock_detected'):
             raise AgentError('MOCK_IN_REAL_RUN','Detected mock executable on PATH')
-        if require_real and (not caps['ready'] or (branch!='static' and config.llm_issues())):
+        if require_real and (not caps['ready'] or (branch!='static' and not frozen_parent and config.llm_issues())):
             raise AgentError('REAL_PREFLIGHT_BLOCKED','Missing real tool capabilities or LLM configuration; run doctor')
         fsm.transition('ANALYZING')
         program=CAnalyzer().analyze(sources); requirements_data=parse_requirements(req.read_text())
@@ -85,12 +101,16 @@ def run(sources,requirements,config,*,output='runs',generate_only=False,fixture=
         selected_entry=entry or ('main' if any(f.name=='main' for f in program.functions) else program.functions[0].name if program.functions else 'main')
         # Static branch uses snapshots even when semantic analysis cannot parse the C subset.
         fsm.transition('GENERATING')
-        client=(FixtureClient(fixture) if fixture else OpenAIClient(config)) if branch!='static' else None
+        client=(FixtureClient(fixture) if fixture else OpenAIClient(config)) if branch!='static' and not frozen_parent else None
         llm={'specs':[],'failures':[]}; static={'candidates':[],'failures':[]}
         with ThreadPoolExecutor(max_workers=2) as pool:
             tasks={}
             if branch in ('both','hoare'):
-                tasks['llm']=pool.submit(llm_hoare.generate,program,requirements_data,info,client,store.root/'generation/llm',domain,trace.bind(branch='hoare'),require_unguarded_posts=require_unguarded_posts)
+                if frozen_parent:
+                    from .phase2.retained import carry
+                    tasks['llm']=pool.submit(carry,frozen_parent,program,requirements_data,info,store.root/'generation/llm',trace.bind(branch='hoare'))
+                else:
+                    tasks['llm']=pool.submit(llm_hoare.generate,program,requirements_data,info,client,store.root/'generation/llm',domain,trace.bind(branch='hoare'),require_unguarded_posts=require_unguarded_posts,agent=generation_agent)
             if branch in ('both','static'):
                 tasks['static']=pool.submit(cbmc_static.generate,sources,selected_entry,info,caps,config,store.root/'generation/cbmc',trace.bind(branch='static'))
             for name,future in tasks.items():
@@ -135,6 +155,13 @@ def run(sources,requirements,config,*,output='runs',generate_only=False,fixture=
                 row['precondition']['status']='ERROR'; row['verification']={'verdict':'ERROR','error':exc.as_dict()}; row['conclusion_gate']={'allowed':False,'reason':exc.code}
         fsm.transition('VERIFYING')
         if not generate_only:
+            if verification_budget:
+                needed=[(contract.function_id,1+len(contract.ensures)) for contract,_,_ in prepared]
+                needed.extend(('static',1) for _ in static['candidates'])
+                for fid,count in needed:
+                    for _ in range(count):
+                        if not verification_budget.reserve('query',fid):
+                            raise AgentError('REPAIR_BUDGET_EXHAUSTED','P/Q and static verification budget exhausted')
             for contract,row,func in prepared:
                 verify_contract(contract,row,func,sources,info,expected_hashes,caps,config,store,trace)
             for candidate in static['candidates']:
@@ -178,5 +205,8 @@ def run(sources,requirements,config,*,output='runs',generate_only=False,fixture=
         store.write('result.json',result)
         trace.emit('run.cancelled' if isinstance(exc,KeyboardInterrupt) else 'run.failed',level='ERROR',failed_stage=failed_stage,failures=result['failures'])
     result['logging']=trace.status()
+    if generation_agent:
+        result['phase1_agent']={'max_attempts_per_function':generation_agent.max_attempts,
+                                'budget':generation_agent.budget.snapshot()}
     store.write('result.json',result)
     return store.root,result

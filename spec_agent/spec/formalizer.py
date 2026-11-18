@@ -15,7 +15,8 @@ def formalize(spec, function, input_info, trace=None):
             if trace:
                 trace.emit('expression.rejected', level='ERROR', field=field,
                            clause_id=clause_id, original=value, error=exc.as_dict())
-            raise
+            clause = f' ({clause_id})' if clause_id else ''
+            raise AgentError(exc.code, f'{field}{clause}: {exc}') from exc
         if trace:
             trace.emit('expression.validated', field=field, clause_id=clause_id,
                        original=value, converted=converted, snapshots=sorted(snapshots))

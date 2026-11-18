@@ -41,6 +41,9 @@ def main(argv=None):
     r.add_argument('--parent-run')
     ra=sub.add_parser('refinement-audit',help='Read-only refinement evidence audit')
     ra.add_argument('--refinement',required=True);ra.add_argument('--parent-run')
+    child=sub.add_parser('phase2',help='Evaluate a successful run or diagnose, repair and reverify a failed run')
+    child.add_argument('--run',required=True);child.add_argument('--output',default='phase2')
+    child.add_argument('--require-real',action='store_true')
     logs=sub.add_parser('logs',help='Read/filter a run observation log without tool or LLM access')
     logs.add_argument('--run',required=True)
     logs.add_argument('--function-id'); logs.add_argument('--spec-id'); logs.add_argument('--property-id')
@@ -54,7 +57,7 @@ def main(argv=None):
     monitor.add_argument('--port',type=int,default=8765,help='Loopback HTTP port; 0 chooses a free port')
     monitor.add_argument('--open',action='store_true',help='Open the local monitor in a browser')
     monitor.add_argument('--show-pq',action='store_true',help='Display Hoare preconditions and postconditions')
-    for name in ('generate','run'):
+    for name in ('generate','run','phase1','agent'):
         p=sub.add_parser(name); p.add_argument('--source',action='append',required=True)
         p.add_argument('--requirements',required=True); p.add_argument('--output',default='runs')
         p.add_argument('--require-real',action='store_true',help='Reject fixture/mock input; require compatible real tools and LLM configuration')
@@ -67,6 +70,20 @@ def main(argv=None):
         p.add_argument('--ui-port',type=int,default=0,help='Monitor port; default chooses a free loopback port')
         p.add_argument('--ui-no-open',action='store_true',help='Print the monitor URL without opening a browser')
         p.add_argument('--show-pq',action='store_true',help='Display Hoare preconditions and postconditions in the monitor (requires --ui)')
+        if name in ('phase1','agent'):
+            p.add_argument('--spec-attempts',type=int,default=2,help='Maximum generation attempts per function, including the first')
+            p.add_argument('--max-input-tokens',type=int,default=16000,help='Estimated input token limit per Phase 1 model request')
+            p.add_argument('--max-queries',type=int,default=1000,help='Verification and evaluation query budget')
+            p.add_argument('--max-llm-calls',type=int,default=64,help='Model call budget across the active agents')
+            p.add_argument('--total-token-budget',type=int,default=128000)
+        if name=='agent':agent_parser=p
+    child.add_argument('--max-queries',type=int,default=1000)
+    child.add_argument('--max-llm-calls',type=int,default=4)
+    child.add_argument('--total-token-budget',type=int,default=128000)
+    for p in (child,agent_parser):
+        p.add_argument('--strength-cases',required=True,help='Independent labels for PreCorr, PreComp and PostComp')
+        p.add_argument('--max-iterations',type=int,default=2,help='Maximum repair/reverification attempts')
+        p.add_argument('--repair-fixture',help='Offline JSON repair proposals; never live LLM evidence')
     args=parser.parse_args(argv)
     try:
         if args.command in ('t3t4','t3t4-audit','t3t4-trace'):
@@ -99,6 +116,21 @@ def main(argv=None):
             report=audit_refinement(args.refinement,parent_root=args.parent_run);print(json.dumps(report,ensure_ascii=False,indent=2))
             return 0 if report['status']=='PASSED' else 2
         c=load_config(Path(args.env))
+        def run_child(parent_root,output,on_run_created=None,budget=None):
+            from .phase2.controller import followup,status_code
+            from .evaluation.models import Limits
+            root,report=followup(parent_root,c,args.strength_cases,output=output,
+                max_iterations=args.max_iterations,require_real=args.require_real,repair_fixture=args.repair_fixture,
+                limits=Limits(llm_calls=args.max_llm_calls,total_tokens=args.total_token_budget,
+                              queries=args.max_queries,calls_per_function=max(1,args.max_iterations),output_tokens=4096),
+                on_run_created=on_run_created,budget=budget)
+            print(f"Sub-agent: {report['execution_status']} | {report['stop_reason']}")
+            print('Final run:',report['final_run']);print('Sub-agent report:',root/'subagent.json')
+            if report['evaluation']:
+                print('Quality report:',Path(report['evaluation']['root'])/'report.md')
+            return status_code(report)
+        if args.command=='phase2':
+            return run_child(args.run,args.output)
         if args.command=='refine':
             from .refinement.controller import refine
             from .evaluation.models import Limits
@@ -141,7 +173,24 @@ def main(argv=None):
         if not 1<=args.log_max_mib<=1024:
             raise AgentError('CONFIG_INVALID','--log-max-mib must be between 1 and 1024')
         if args.show_pq and not args.ui:
-            raise AgentError('CONFIG_INVALID','--show-pq requires --ui for run and generate')
+            raise AgentError('CONFIG_INVALID','--show-pq requires --ui')
+        workflow_budget=generation_agent=None
+        if args.command=='agent':
+            if not 0<=args.max_iterations<=10:
+                raise AgentError('PHASE2_CONFIG_INVALID','Repair iterations must be between 0 and 10')
+            if args.require_real and args.repair_fixture:
+                raise AgentError('MOCK_IN_REAL_RUN','Real-only sub-agent rejects repair fixtures')
+            if not Path(args.strength_cases).is_file():
+                raise AgentError('STRENGTH_CASES_INVALID','Independent strength labels file is missing')
+        if args.command in ('phase1','agent'):
+            from .evaluation.models import Budget,Limits
+            from .phase1.agent import Phase1Agent
+            call_limit=max(args.spec_attempts,args.max_iterations) if args.command=='agent' else args.spec_attempts
+            limits=Limits(input_tokens=args.max_input_tokens,llm_calls=args.max_llm_calls,
+                          total_tokens=args.total_token_budget,queries=args.max_queries,
+                          calls_per_function=call_limit,output_tokens=4096)
+            workflow_budget=Budget(limits)
+            generation_agent=Phase1Agent(workflow_budget,args.spec_attempts)
         ui=None
         try:
             if args.ui:
@@ -153,7 +202,7 @@ def main(argv=None):
             root,result=run([Path(p) for p in args.source],Path(args.requirements),c,output=args.output,
               log_max_bytes=args.log_max_mib*1024*1024,require_real=args.require_real,generate_only=args.command=='generate',fixture=args.llm_fixture,branch=args.branch,entry=args.entry,
               domain=Path(args.domain_knowledge).read_text() if args.domain_knowledge else None,
-              on_run_created=ui.attach if ui else None)
+              on_run_created=ui.attach if ui else None,verification_budget=workflow_budget,generation_agent=generation_agent)
         except BaseException:
             if ui:ui.close()
             raise
@@ -163,11 +212,19 @@ def main(argv=None):
             for q in row['properties']: print(f"  {q['property_id']}: {q['verdict']}")
         for row in result['static_properties']: print(f"static {row['cbmc_property_id']}: {row.get('verdict','NOT_RUN')}")
         print('Log:',root/'process.log', '|',result['logging']['status']); print('Failures:',len(result['failures'])); print('Result:',root/'result.json')
+        if generation_agent:
+            print('Phase 1 agent model calls:',result['phase1_agent']['budget']['llm_calls'])
+        try:
+            child_code=run_child(root,Path(args.output)/'phase2',ui.attach if ui else None,workflow_budget) if args.command=='agent' and result['status']!='CANCELLED' else None
+        except BaseException:
+            if ui:ui.close()
+            raise
         if ui:
             try:
                 if result['status']!='CANCELLED':
                     print('监控界面保持打开；Ctrl+C 关闭界面并返回本次运行退出码。',flush=True);ui.wait()
             finally:ui.close()
+        if child_code is not None:return child_code
         if result['status']=='CANCELLED': return 130
         if result['status']!='COMPLETED': return 2
         if any(r['verification']['verdict']=='VIOLATED' for r in result['contracts']) or any(r.get('verdict')=='VIOLATED' for r in result['static_properties']): return 1

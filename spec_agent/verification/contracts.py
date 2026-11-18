@@ -1,4 +1,6 @@
 """Shared verification of a validated formal contract, without generation."""
+import json
+
 from ..artifacts import sha256_file,write_json_atomic
 from ..errors import AgentError
 from ..spec.harness import emit_harness
@@ -14,6 +16,19 @@ def verify_contract(contract,row,func,sources,info,expected_hashes,caps,config,s
         trace_dir=store.root/'generation/llm/functions'/func.function_id
         bound={str(p):sha256_file(p) for p in [semantic,formal,trace_dir/'prompt.json',trace_dir/'response.txt',store.root/'toolchain_manifest.json']}
         if (trace_dir/'response.raw.json').exists():bound[str(trace_dir/'response.raw.json')]=sha256_file(trace_dir/'response.raw.json')
+        if (trace_dir/'attempts.json').is_file():
+            attempts=trace_dir/'attempts.json'
+            recorded=json.loads(attempts.read_text(encoding='utf-8'))
+            recorded_hash=sha256_file(attempts)
+            generation=json.loads(semantic.read_text(encoding='utf-8'))['generation']
+            if generation.get('attempts_sha256')!=recorded_hash:
+                raise AgentError('ARTIFACT_INTEGRITY_FAILED','Generation attempt manifest changed')
+            bound[str(attempts)]=recorded_hash
+            for relative,checksum in recorded['artifact_hashes'].items():
+                path=(trace_dir/relative).resolve()
+                if not path.is_relative_to(trace_dir/'attempts'):
+                    raise AgentError('ARTIFACT_INTEGRITY_FAILED','Generation attempt artifact outside run')
+                bound[str(path)]=checksum
         if (store.root/'input/domain_knowledge.json').exists():bound[str(store.root/'input/domain_knowledge.json')]=sha256_file(store.root/'input/domain_knowledge.json')
         provenance={'source_sha256':info['source_sha256'],'requirements_sha256':info['requirements_sha256'],
                     'semantic_spec':str(semantic),'semantic_spec_sha256':bound[str(semantic)],
