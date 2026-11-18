@@ -6,7 +6,7 @@ SpecAgent 从 C 源码和自然语言需求生成函数级 Hoare 规约 `{P} f {
 
 ```mermaid
 flowchart TD
-    IN["C 源码与自然语言需求"] --> PRE["工具预检与输入快照"]
+    IN["C 源码"] --> PRE["工具预检与输入快照"]
     PRE --> AST["AST 分析：函数、调用关系、实参与分支条件"]
     AST --> H["Hoare 分支：LLM 逐函数生成 P 和 Q"]
     AST --> S["静态分支：选定源码入口"]
@@ -31,7 +31,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    C["agent 统一入口"] --> A["读入 C 源码和需求，保存输入快照"]
+    C["agent 统一入口"] --> A["读入 C 源码，保存输入快照"]
 
     subgraph PHASE1["第一阶段子 agent · 规约生成与验证"]
         A --> B["分析函数、调用点和分支条件"]
